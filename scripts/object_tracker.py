@@ -33,6 +33,7 @@ def object_pose_update(msg):
     ob_pose.x = msg.x
     ob_pose.y = msg.y
 
+
 def main():
     global ob_pose
     
@@ -50,6 +51,7 @@ def main():
             print('object_not_found')
             move(0,0)
         else:
+            move(ob_pose.z, -0.002*(ob_pose.x-600))
 
         rate.sleep()
 

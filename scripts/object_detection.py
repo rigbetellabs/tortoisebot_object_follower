@@ -13,12 +13,12 @@ class Object_tracker:
     def __init__(self):
         rospy.Subscriber("/object_pose", object_pose, self.object_pose_update)
         self.pose_pub = rospy.Publisher('/object_pose', object_pose, queue_size=10)
-        rospy.Subscriber("/usb_cam/image_raw", Image, self.image_callback)
+        rospy.Subscriber("/camera/image_raw", Image, self.image_callback)
         self.bridge = CvBridge()
         self.ob_pose = object_pose()
         self.font = cv2.FONT_HERSHEY_SIMPLEX
-        self.yellowLower =(110,100,100)
-        self.yellowUpper = (130,255,255)
+        self.yellowLower =(90,50,50)
+        self.yellowUpper = (150,255,255)
         self.reset_ob_val()
 
     def reset_ob_val(self):
@@ -39,7 +39,7 @@ class Object_tracker:
     
     def filter_color(self, rgb_image, lower_bound_color, upper_bound_color):
         hsv_image = cv2.cvtColor(rgb_image, cv2.COLOR_BGR2HSV)
-        #cv2.imshow("hsv image",hsv_image)
+        cv2.imshow("hsv image",hsv_image)
         masked_image = cv2.inRange(hsv_image, lower_bound_color, upper_bound_color)
         return masked_image
 
@@ -70,7 +70,7 @@ class Object_tracker:
             for c in contours:
                 area = cv2.contourArea(c)
 
-                if (area>500):
+                if (area>10):
                     ((x, y), radius) = cv2.minEnclosingCircle(c)
                     cv2.drawContours(rgb_image, [c], -1, (150,250,150), 1)
                     self.ob_pose.x, self.ob_pose.y = self.get_contour_center(c)
