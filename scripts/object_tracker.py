@@ -45,13 +45,16 @@ def main():
 
     rate = rospy.Rate(10)
     move(0,0)
+    ob_pose.x = -1
 
     while not rospy.is_shutdown():
         if ob_pose.x == -1:
             print('object_not_found')
             move(0,0)
         else:
-            move(ob_pose.z, -0.002*(ob_pose.x-600))
+            move((ob_pose.z-0.3), -0.004*(ob_pose.x-415))
+            print(0.3*(ob_pose.z-0.5))
+
 
         rate.sleep()
 

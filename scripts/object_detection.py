@@ -19,12 +19,12 @@ class Object_tracker:
         self.font = cv2.FONT_HERSHEY_SIMPLEX
         self.yellowLower =(90,50,50)
         self.yellowUpper = (150,255,255)
+        self.ob_pose.z = -1
         self.reset_ob_val()
 
     def reset_ob_val(self):
         self.ob_pose.x = -1
         self.ob_pose.y = -1
-        self.ob_pose.z = -1
         self.ob_pose.r = -1
 
     def object_pose_update(self, msg):
@@ -39,7 +39,7 @@ class Object_tracker:
     
     def filter_color(self, rgb_image, lower_bound_color, upper_bound_color):
         hsv_image = cv2.cvtColor(rgb_image, cv2.COLOR_BGR2HSV)
-        cv2.imshow("hsv image",hsv_image)
+        #cv2.imshow("hsv image",hsv_image)
         masked_image = cv2.inRange(hsv_image, lower_bound_color, upper_bound_color)
         return masked_image
 
@@ -64,31 +64,40 @@ class Object_tracker:
         black_image = np.zeros([binary_image.shape[0], binary_image.shape[1],3],'uint8')
         
         if contours == 0:
-            cv2.putText(black_image,'object not found',(20,15), self.font, 0.81,(255,255,255),1)
+            cv2.putText(black_image,'contours not detected',(20,15), self.font, 0.81,(255,255,255),1)
 
         else:
-            for c in contours:
-                area = cv2.contourArea(c)
+            area = 0
+            c = 0
+            for i in contours:
+                ar = cv2.contourArea(i)
+                if ar > area:
+                    area = ar
+                    c = i 
 
-                if (area>10):
-                    ((x, y), radius) = cv2.minEnclosingCircle(c)
-                    cv2.drawContours(rgb_image, [c], -1, (150,250,150), 1)
-                    self.ob_pose.x, self.ob_pose.y = self.get_contour_center(c)
-                    self.ob_pose.r = radius
-                    self.pose_pub.publish(self.ob_pose)
-                    cv2.circle(rgb_image, (int(x),int(y)),int(radius),(0,0,255),1)
-                    cv2.circle(black_image, (self.ob_pose.x,self.ob_pose.y),(int)(radius),(0,0,255),1)
+            if (area>10):
+                ((x, y), radius) = cv2.minEnclosingCircle(c)
+                cv2.drawContours(rgb_image, [c], -1, (150,250,150), 1)
+                self.ob_pose.x, self.ob_pose.y = self.get_contour_center(c)
+                self.ob_pose.r = radius
 
-            cv2.putText(black_image,'ob_x = {}'.format(self.ob_pose.x),(15,20), self.font, 0.7,(255,255,255),1)
-            cv2.putText(black_image,'ob_y = {}'.format(self.ob_pose.y),(15,60), self.font, 0.7,(255,255,255),1)
-            cv2.putText(black_image,'ob_z = {}'.format(self.ob_pose.z),(15,100), self.font, 0.7,(255,255,255),1)
-            cv2.putText(black_image,'ob_r = {}'.format(int(self.ob_pose.r)),(15,140), self.font, 0.7,(255,255,255),1)
+                cv2.circle(rgb_image, (int(x),int(y)),int(radius),(0,0,255),1)
+                cv2.circle(black_image, (self.ob_pose.x,self.ob_pose.y),(int)(radius),(0,0,255),1)
+                cv2.putText(black_image,'ob_x = {}'.format(self.ob_pose.x),(15,20), self.font, 0.7,(255,255,255),1)
+                cv2.putText(black_image,'ob_y = {}'.format(self.ob_pose.y),(15,60), self.font, 0.7,(255,255,255),1)
+                cv2.putText(black_image,'ob_z = {}'.format(self.ob_pose.z),(15,100), self.font, 0.7,(255,255,255),1)
+                cv2.putText(black_image,'ob_r = {}'.format(int(self.ob_pose.r)),(15,140), self.font, 0.7,(255,255,255),1)
+            else :
+                cv2.putText(black_image,'object too small',(20,15), self.font, 0.81,(255,255,255),1)
+
+        self.pose_pub.publish(self.ob_pose)
         cv2.imshow("Object_detector",rgb_image)
         cv2.imshow("Black_image",black_image)
         cv2.waitKey(1)
 
     def ball_detection(self, image):
         rgb_image = image
+        self.reset_ob_val()
         binary_image_mask = self.filter_color( rgb_image, self.yellowLower, self.yellowUpper)
         contours = self.getContours(binary_image_mask)
         self.draw_ball_contour(binary_image_mask, rgb_image,contours)
