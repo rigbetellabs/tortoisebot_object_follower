@@ -44,7 +44,7 @@ class Object_tracker:
         return masked_image
 
     def getContours(self, binary_image):
-        contours, hierarchy = cv2.findContours(binary_image.copy(),cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)
+        _, contours, hierarchy = cv2.findContours(binary_image.copy(),cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)
         if contours:
             return contours
         else:
@@ -108,13 +108,7 @@ class Object_tracker:
 def main():
     rospy.init_node('Object_detection')
     object = Object_tracker()
-    try:
-        rospy.spin()
-    except KeyboardInterrupt:
-        rospy.loginfo('Shutting down')
-    cv2.waitKey(0)
-    del(object)
-    cv2.destroyAllWindows()
+    rospy.spin()
 
 if __name__ == '__main__':
     main()
