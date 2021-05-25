@@ -3,11 +3,11 @@
 import rospy
 from geometry_msgs.msg import Twist
 from sensor_msgs.msg import LaserScan
-import numpy as np
 from tortoisebot_object_follower.msg import object_pose
 
 velocity_msg = Twist()
 ob_pose = object_pose()
+
 
 # initialize publisher to publish to /cmd_vel topic
 vel_pub = rospy.Publisher('/cmd_vel', Twist, queue_size=10)
@@ -23,16 +23,30 @@ def move(linear,angular):
 
 def laser_callback(msg):
     global ob_pose,pose_pub
-    ob_pose.z = min(min(msg.ranges[288:431]), 10)
+    ir = min(min(msg.ranges[288:431]), 10)
+    ob_pose.z = (0.99*ir)+0.2
     pose_pub.publish(ob_pose)
-
+    
 
 def object_pose_update(msg):
     global ob_pose
-    
     ob_pose.x = msg.x
     ob_pose.y = msg.y
+    ob_pose.r = msg.r
 
+def calibrate():
+    global ob_pose
+    print('calibrating...')
+    while(1):
+        rospy.sleep(1)
+        if ob_pose.x == -1 or ob_pose.z > 3:
+            print('object not found')
+        else:
+            break
+    const = ob_pose.r * ob_pose.z
+    print(const)
+    print('calibration done')
+    return const
 
 def main():
     global ob_pose
@@ -42,18 +56,22 @@ def main():
     # subscribe to /odom and /ebot/laser/scan
     rospy.Subscriber('/scan', LaserScan, laser_callback)
     rospy.Subscriber("/object_pose", object_pose, object_pose_update)
-
+    print('object_tracker online')
     rate = rospy.Rate(10)
     move(0,0)
     ob_pose.x = -1
-
+    rospy.sleep(2)
+    const = calibrate()
+    print('tracking started')
+    dist = 0
     while not rospy.is_shutdown():
+        dist = const/ob_pose.r
+        print("distance = {}".format(dist))
         if ob_pose.x == -1:
             print('object_not_found')
             move(0,0)
         else:
-            move((ob_pose.z-0.3), -0.004*(ob_pose.x-415))
-            print(0.3*(ob_pose.z-0.5))
+            move((dist-0.2), -0.004*(ob_pose.x-415))
 
 
         rate.sleep()
