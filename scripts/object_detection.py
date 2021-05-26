@@ -13,7 +13,7 @@ class Object_tracker:
     def __init__(self):
         rospy.Subscriber("/object_pose", object_pose, self.object_pose_update)
         self.pose_pub = rospy.Publisher('/object_pose', object_pose, queue_size=10)
-        rospy.Subscriber("/camera/image_raw", Image, self.image_callback)
+        rospy.Subscriber("/camera", Image, self.image_callback)
         self.bridge = CvBridge()
         self.ob_pose = object_pose()
         self.font = cv2.FONT_HERSHEY_SIMPLEX
