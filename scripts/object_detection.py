@@ -13,7 +13,7 @@ class Object_tracker:
     def __init__(self):
         rospy.Subscriber("/object_pose", object_pose, self.object_pose_update)
         self.pose_pub = rospy.Publisher('/object_pose', object_pose, queue_size=10)
-        rospy.Subscriber("/camera", Image, self.image_callback)
+        rospy.Subscriber("/camera/image_raw", Image, self.image_callback)
         self.bridge = CvBridge()
         self.ob_pose = object_pose()
         self.font = cv2.FONT_HERSHEY_SIMPLEX
@@ -93,7 +93,7 @@ class Object_tracker:
     def draw_ball_contour(self, binary_image, rgb_image, contours):
         #print(contours)
         black_image = np.zeros([binary_image.shape[0], binary_image.shape[1],3],'uint8')
-        cv2.line(black_image, (415,0), (415,1000), (0,255,0),2)
+        cv2.line(black_image, (400,0), (400,1000), (0,255,0),2)
         if contours == 0:
             cv2.putText(black_image,'Object Not Detected',(20,15), self.font, 0.81,(255,255,255),1)
 
@@ -117,11 +117,11 @@ class Object_tracker:
             
                 cv2.putText(black_image,'POSITION ERROR',(15,20), self.font, 0.8,(0,0,255),1)
                 if self.ob_pose.x>430:
-                    cv2.putText(black_image,'RIGHT : {}'.format(self.ob_pose.x-415),(15,60), self.font, 0.8,(255,255,255),2)
+                    cv2.putText(black_image,'RIGHT : {}'.format(self.ob_pose.x-400),(15,60), self.font, 0.8,(255,255,255),2)
                     cv2.putText(rgb_image,'TURN LEFT',(310,40), self.font, 1.5,(0,255,0),2)
                     cv2.arrowedLine(rgb_image, (290,20), (230,20),(0,255,0),3)
                 elif self.ob_pose.x<400:
-                    cv2.putText(black_image,'LEFT : {}'.format(415-self.ob_pose.x),(15,60), self.font, 0.8,(255,255,255),2)
+                    cv2.putText(black_image,'LEFT : {}'.format(400-self.ob_pose.x),(15,60), self.font, 0.8,(255,255,255),2)
                     cv2.putText(rgb_image,'TURN RIGHT',(310,40), self.font, 1.5,(0,255,0),2)
                     cv2.arrowedLine(rgb_image, (600,20), (660,20),(0,255,0),3)
                 else:

@@ -4,6 +4,7 @@ import rospy
 from geometry_msgs.msg import Twist
 from sensor_msgs.msg import LaserScan
 from tortoisebot_object_follower.msg import object_pose
+import numpy as np
 
 velocity_msg = Twist()
 ob_pose = object_pose()
@@ -24,8 +25,8 @@ def move(linear,angular):
 
 def laser_callback(msg):
     global laser_val
-    ir = min(min(msg.ranges[288:431]), 10)
-    laser_val = (0.99*ir)+0.2
+    laser_val = min(min(msg.ranges[288:431]), 10)
+    #laser_val = (0.99*ir)+0.2
     
 
 def object_pose_update(msg):
@@ -39,14 +40,31 @@ def calibrate():
     print('calibrating...')
     while(1):
         rospy.sleep(1)
-        if ob_pose.x == -1 and laser_val > 3:
+        if ob_pose.x == -1 or laser_val > 3:
             print('object not found')
+            print(laser_val)
         else:
             break
     const = ob_pose.r * laser_val
     print(const)
     print('calibration done')
     return const
+
+def calculate(const):
+    global ob_pose
+    max_vel = 0.2
+    max_theta = 2.35
+    ob_pose.z = const/ob_pose.r
+    if abs(ob_pose.z - 0.3) > max_vel:
+        linear = max_vel * np.sign(ob_pose.z - 0.3)
+    else:
+        linear = ob_pose.z-0.3
+
+    if abs(-0.005*(ob_pose.x-400)) > max_theta:
+        linear = max_theta * np.sign(-0.005*(ob_pose.x-400))
+    else:
+        angular = -0.005*(ob_pose.x-400)
+    return linear, angular
 
 def main():
     global ob_pose,pose_pub
@@ -64,14 +82,14 @@ def main():
     const = calibrate()
     print('tracking started')
     while not rospy.is_shutdown():
-        ob_pose.z = const/ob_pose.r
+        linear, angular = calculate(const)
         pose_pub.publish(ob_pose)
-        print("distance = {}".format(ob_pose.z))
+        print("distance error = {}".format(ob_pose.z - 0.35))
         if ob_pose.x == -1:
             print('object_not_found')
             move(0,0)
         else:
-            move((ob_pose.z-0.35), -0.004*(ob_pose.x-415))
+            move(linear, angular)
 
 
         rate.sleep()
