@@ -78,6 +78,7 @@ def main():
     rate = rospy.Rate(10)
     move(0,0)
     ob_pose.z = 0
+    ob_pose.x = -1
     rospy.sleep(2)
     const = calibrate()
     print('tracking started')
